@@ -1,1 +1,3 @@
-# machine_learning_forJS
+# 자바스크립트로 구현한 머신러닝
+
+20201105 linear regression 구현, d3 이용하여 예시데이터 그래프 테스트
