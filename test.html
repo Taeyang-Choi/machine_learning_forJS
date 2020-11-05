@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+
+</body>
+</html>
+<script src="js/machine.js"></script>
+<script type="text/javascript">
+	var mx = Matrix;
+	var cal = Calculus;
+	var W = [[Math.random()]];
+	var b = Math.random();
+
+	var xData = mx.reshape([175, 160, 185, 171, 170, 155], 6, 1);
+	var tData = mx.reshape([70,54,78,66,63, 45], 6, 1);
+
+	//console.log(lossFunc(xData, tData));
+
+	var learning_rate = 1e-5;
+
+	var f = (x, dx) => {
+		if(W === x) 		return lossFunc(dx, b, xData, tData);
+		else if(b === x)	return lossFunc(W, dx, xData, tData);
+	};
+
+	var cnt = 0;
+	while(true) {
+		W = mx.sub(W, learning_rate * cal.numericalDerivative(f, W));
+		b -= learning_rate * cal.numericalDerivative(f, b);
+
+		if(cnt % 10000 == 0) {
+			console.log("cnt="+cnt+", W: " + W + ", b: " + b);
+		}
+		cnt++;
+
+		if(cnt % 1000000 == 0) break;
+	}
+	
+
+
+	function lossFunc(W, b, x, t) {
+		var y = Machine.getYMatrix(x, W, b); // y = Wx + b;
+		return mx.sum(mx.pow(mx.sub(t, y), 2)) / mx.size(x); // Sigma(1->n) (t_n - y_n)^2 / n 
+	}
+
+	function numericalDerivative(f, x) {
+		var dx = 1e-4;	
+		var tmp;
+		if(Array.isArray(x)) {
+			tmp = x.slice();
+			return (f(x, Matrix.add(tmp, dx)) - f(x, Matrix.sub(tmp, dx))) / (2 * dx)
+		} else {
+			tmp = x;
+			return (f(x, tmp+dx) - f(x, tmp-dx)) / (2*dx);
+		}
+	}
+</script>
