@@ -31,8 +31,9 @@
 		var f = (x, dx) => {
 			if(W === x) 		return lossFunc(dx, b, xData, tData);
 			else if(b === x)	return lossFunc(W, dx, xData, tData);
-		};
-		console.log(lossFunc(W, b, xData, tData))
+		}
+		
+		console.log(lossFunc(W, b, xData, tData));
 
 
 		var cnt = 0;

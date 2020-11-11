@@ -1,60 +1,37 @@
-
-
-var Machine = {
-	getYMatrix: function(x, W, b) {
-		return Matrix.add(Matrix.dot(x, W), b);
-		
-	}, 
-
-	lossFuncMSE: function(W, b, x, t) { // loss function MSE(Mean Squared Error)
-		var y = Machine.getYMatrix(x, W, b); // y = Wx + b;
-		return Matrix.sum(Matrix.pow(Matrix.sub(t, y), 2)) / Matrix.size(x); // Sigma(1->n) (t_n - y_n)^2 / n 
-	},
-}
-
-var Calculus = {
-	numericalDerivative: function(f, x) {
-		var dx = 1e-4;	
-		if(Array.isArray(x)) {
-			var rArr = [];
-
-			for(var i=0; i<x.length; i++) {
-				rArr.push(new Array());
-		
-				for(var j=0; j<x[0].length; j++) {
-					if(j == 0) rArr[i].push(0);
-					var tmp_p = JSON.parse(JSON.stringify(x));
-					var tmp_m = JSON.parse(JSON.stringify(x));
-					
-					tmp_p[i][j] = tmp_p[i][j] + dx;
-					tmp_m[i][j] = tmp_m[i][j] - dx;
-
-					rArr[i][j] = (f(x, tmp_p) - f(x, tmp_m)) / (2 * dx);
-				}
-			}
-			//tmp = x.slice();
-
-			return rArr;
-			//return (f(x, Matrix.add(tmp, dx)) - f(x, Matrix.sub(tmp, dx))) / (2 * dx)
-		} else {
-			var tmp = x;
-			return (f(x, tmp+dx) - f(x, tmp-dx)) / (2*dx);
-		}
-	},
-}
-
 var Matrix = {
 	add: function(a, b) {
 		var rArr = [];
 		if(Array.isArray(a) && Array.isArray(b)) {
-			if(!this._isAddable(a, b)) return;
-			for(var i=0; i<a.length; i++) {
+			if(this.size(a) != this.size(b)) {
+				if(this.size(a) == 1) {
+					for(var i=0; i<b.length; i++) {
+						rArr.push(new Array());
+						for(var j=0; j<b[0].length; j++) {
+							if(j == 0) rArr[i].push(0);
+							rArr[i][j] = a[0][0] + b[i][j];
+						}
+					}
+				} else if(this.size(b) == 1) {
+					for(var i=0; i<a.length; i++) {
+						rArr.push(new Array());
+						for(var j=0; j<a[0].length; j++) {
+							if(j == 0) rArr[i].push(0);
+							rArr[i][j] = a[i][j] + b[0][0];
+						}
+					}
+				} else if(!this._isAddable(a, b)) {
+					return;
+				}
+			} else {
+				if(!this._isAddable(a, b)) return;
+				for(var i=0; i<a.length; i++) {
 					rArr.push(new Array());
 					for(var j=0; j<a[0].length; j++) {
 						if(j == 0) rArr[i].push(0);
 						rArr[i][j] = a[i][j] + b[i][j];
 					}
 				}
+			}
 		} else if(Array.isArray(a) || Array.isArray(b)) {
 			if(Array.isArray(a)) { // a is array
 				for(var i=0; i<a.length; i++) {
@@ -336,6 +313,62 @@ var Matrix = {
 	},
 }
 
+var Machine = {
+	np: Matrix,
+	getYMatrix: function(x, W, b) {
+		return this.np.add(this.np.dot(x, W), b);
+	}, 
+
+	lossFuncMSE: function(W, b, x, t) { // loss function MSE(Mean Squared Error)
+		var y = this.getYMatrix(x, W, b); // y = Wx + b;
+		return this.np.sum(this.np.pow(this.np.sub(t, y), 2)) / this.np.size(x); // Sigma(1->n) (t_n - y_n)^2 / n 
+	},
+
+	lossFuncCrossEntropy: function(W, b, x, t) {
+		var dx = 1e-7;
+
+		const z = this.getYMatrix(x, W, b); // z = Wx + b;
+		const y = this.sigmoid(z); // y = 1 / (1+exp^z)
+
+		return -this.np.sum(this.np.add(this.np.mul(t, this.np.log(this.np.add(y, dx))), this.np.mul(this.np.sub(1, t), this.np.log(this.np.add(this.np.sub(1, y), dx))))); 
+	},
+
+	sigmoid: function(_data) {
+		const data = _data;
+		return this.np.div(1, this.np.add(1, this.np.exp(this.np.mul(data, -1))));  // 1/(1+exp(-x))
+	},
+}
+
+var Calculus = {
+	numericalDerivative: function(f, x) {
+		var dx = 1e-4;	
+		if(Array.isArray(x)) {
+			var rArr = [];
+
+			for(var i=0; i<x.length; i++) {
+				rArr.push(new Array());
+		
+				for(var j=0; j<x[0].length; j++) {
+					if(j == 0) rArr[i].push(0);
+					var tmp_p = JSON.parse(JSON.stringify(x)); // deep copy
+					var tmp_m = JSON.parse(JSON.stringify(x));
+
+					tmp_p[i][j] = tmp_p[i][j] + dx;
+					tmp_m[i][j] = tmp_m[i][j] - dx;
+
+					rArr[i][j] = (f(x, tmp_p) - f(x, tmp_m)) / (2 * dx); // f(x+dx) - f(x-dx) / 2dx 행렬별로 실행
+				}
+			}
+			return rArr;
+		} else {
+			var tmp = x;
+			return (f(x, tmp+dx) - f(x, tmp-dx)) / (2*dx);
+		}
+	},
+}
+
+
+
 var Util = {
 	getRandomArbitrary: function(min, max) {
   		return Math.random() * (max - min) + min;
@@ -354,9 +387,6 @@ var Util = {
 		return result;
 	}
 }
-
-
-
 
 var AJAX = {
 	call: function (url, params, onSuccess, progShow, progMsg) {
@@ -384,4 +414,55 @@ var AJAX = {
 		
 		jQuery.ajax(callobj);
 	},
+}
+
+function LogicGate() {
+	LogicGate.prototype.np = Matrix;
+	LogicGate.prototype.log = false;
+	LogicGate.prototype.init = function(data) {
+		this.name = data.name;
+		this.__xData = Matrix.reshape(data.xdata, 4, 2);
+		this.__tData = Matrix.reshape(data.tdata, 4, 1);
+
+		this.__W = Matrix.initWeight(2, 1);
+		this.__b = Matrix.initWeight(1, 1);
+
+		this.__lr = 1e-2; // 학습율
+		this.__ln = 8001; // 훈련 횟수
+		if(isValid(data.log)) this.log = data.log; 
+		
+	}
+
+	LogicGate.prototype.errorVal = function() {
+		return Machine.lossFuncCrossEntropy(this.__W, this.__b, this.__xData, this.__tData);
+	}
+
+	LogicGate.prototype.train = function() {
+		var f = (x, dx) => {
+			if(this.__W === x) 		return Machine.lossFuncCrossEntropy(dx, this.__b, this.__xData, this.__tData);
+			else if(this.__b === x)	return Machine.lossFuncCrossEntropy(this.__W, dx, this.__xData, this.__tData);
+		};
+
+		var cnt = 0;
+
+		for(var i=0; i<this.__ln; i++) {
+			this.__W = this.np.sub(this.__W, this.np.mul(this.__lr, Calculus.numericalDerivative(f, this.__W)));
+			this.__b = this.np.sub(this.__b, this.np.mul(this.__lr, Calculus.numericalDerivative(f, this.__b)));
+
+			// log 요청 선언 obj.log = true 
+			if(this.log) if(i % 400 == 0) console.log("cnt="+i+", W: " + this.__W + ", b: " + this.__b + ", error_val: " + Machine.lossFuncCrossEntropy(this.__W, this.__b, this.__xData, this.__tData));
+		}
+	}
+
+	LogicGate.prototype.predict = function(data) {
+		const z = this.np.add(this.np.dot(data, this.__W), this.__b);
+		const y = Machine.sigmoid(z);
+
+		console.log(y);
+	};
+}
+
+
+function isValid(param) {
+	return (param != null && param != "" && typeof param != "undefined");
 }
