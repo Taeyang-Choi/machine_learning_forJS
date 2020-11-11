@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+
+</body>
+</html>
+<script src="js/jquery-1.12.0.min.js"></script>
+<script type="text/javascript">
+	$(document).ready(function() {
+		start();
+	});
+</script>	
+
+<script src="js/machine.js"></script>
+<script type="text/javascript">
+	var np = Matrix;
+	var cal = Calculus;
+
+	function start() {
+		var xData = [0, 0, 0, 1, 1, 0, 1, 1];
+		var and = [0, 0, 0, 1]; // and data;
+
+		var gate = new LogicGate();
+		gate.init({
+			name: "AND_GATE",
+			xdata: xData,
+			tdata : and,
+		});
+		gate.train();
+
+		gate.predict(np.reshape([0, 0], 1, 2));
+		gate.predict(np.reshape([0, 1], 1, 2));
+		gate.predict(np.reshape([1, 0], 1, 2));
+		gate.predict(np.reshape([1, 1], 1, 2));
+
+	}
+</script>
