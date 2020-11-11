@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+
+</body>
+</html>
+<script src="js/jquery-1.12.0.min.js"></script>
+<script type="text/javascript">
+	$(document).ready(function() {
+		start();
+	});
+</script>	
+
+<script src="js/machine.js"></script>
+<script type="text/javascript">
+	var np = Matrix;
+	var cal = Calculus;
+
+	function start() {
+		var xData = np.reshape([2, 4, 6, 8, 10, 12, 14, 16, 18, 20], 10, 1);
+		var tData = np.reshape([0, 0, 0, 0, 0, 0, 1, 1, 1, 1], 10, 1);
+
+		var W = np.initWeight(1, 1);
+		var b = Math.random();
+
+		var learning_rate = 1e-2;
+
+		var f = (x, dx) => {
+			if(W === x) 		return lossFunc(dx, b, xData, tData);
+			else if(b === x)	return lossFunc(W, dx, xData, tData);
+		};
+		console.log(lossFunc(W, b, xData, tData))
+
+
+		var cnt = 0;
+		while(true) {
+			W = np.sub(W, np.mul(learning_rate, cal.numericalDerivative(f, W)));
+			b -= learning_rate * cal.numericalDerivative(f, b);
+
+			if(cnt % 400 == 0) {
+				console.log("cnt="+cnt+", W: " + W + ", b: " + b + ", error_val: " + lossFunc(W, b, xData, tData));
+			}
+			cnt++;
+
+			if(cnt % 10001 == 0) break;
+		}
+
+
+		var data = np.reshape([17], 1, 1);
+		const z = Machine.getYMatrix(data, W, b);
+		const y = sigmoid(z);
+		console.log(y);
+	}
+
+	function sigmoid(_data) {
+		const data = _data;
+		return np.div(1, np.add(1, np.exp(np.mul(data, -1))));  // 1/(1+exp(-x))
+	}
+
+	function lossFunc(W, b, xData, tData) {
+		var delta = 1e-7;
+
+		const z = Machine.getYMatrix(xData, W, b); // y = Wx + b;
+		const y = sigmoid(z);
+
+		return -np.sum(np.add(np.mul(tData, np.log(np.add(y, delta))), np.mul(np.sub(1, tData), np.log(np.add(np.sub(1, y), delta))))); 
+		// -np.sum(t*log(y+delta) + (1-t)*log((1-y)+delta))
+	}
+</script>

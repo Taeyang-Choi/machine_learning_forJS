@@ -53,8 +53,8 @@
 	var checkW = W, checkb = b;
 
 	console.log("init W: " + W + ", b: " + b + ", EW: " + EW + ", Eb: " + Eb);
-	var interval = setInterval(function() {
-		var tmpW = mx.sub(W, lrW * cal.numericalDerivative(f, W));
+	var interval = setInterval(function() { 
+		var tmpW = mx.sub(W, mx.mul(lrW, cal.numericalDerivative(f, W)));
 		var tmpEW = cal.numericalDerivative(f, tmpW);
 		var wFlag = false;
 		if(EW > 0) {

@@ -28,7 +28,7 @@
 
 	var cnt = 0;
 	while(true) {
-		W = mx.sub(W, learning_rate * numericalDerivative(f, W));
+		W = mx.sub(W, mx.mul(learning_rate, numericalDerivative(f, W)));
 		b -= learning_rate * numericalDerivative(f, b);
 
 		if(cnt % 1000000 == 0) {
