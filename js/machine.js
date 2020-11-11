@@ -1,19 +1,43 @@
+
+
 var Machine = {
 	getYMatrix: function(x, W, b) {
 		return Matrix.add(Matrix.dot(x, W), b);
 		
-	}
+	}, 
+
+	lossFuncMSE: function(W, b, x, t) { // loss function MSE(Mean Squared Error)
+		var y = Machine.getYMatrix(x, W, b); // y = Wx + b;
+		return Matrix.sum(Matrix.pow(Matrix.sub(t, y), 2)) / Matrix.size(x); // Sigma(1->n) (t_n - y_n)^2 / n 
+	},
 }
 
 var Calculus = {
 	numericalDerivative: function(f, x) {
 		var dx = 1e-4;	
-		var tmp;
 		if(Array.isArray(x)) {
-			tmp = x.slice();
-			return (f(x, Matrix.add(tmp, dx)) - f(x, Matrix.sub(tmp, dx))) / (2 * dx)
+			var rArr = [];
+
+			for(var i=0; i<x.length; i++) {
+				rArr.push(new Array());
+		
+				for(var j=0; j<x[0].length; j++) {
+					if(j == 0) rArr[i].push(0);
+					var tmp_p = JSON.parse(JSON.stringify(x));
+					var tmp_m = JSON.parse(JSON.stringify(x));
+					
+					tmp_p[i][j] = tmp_p[i][j] + dx;
+					tmp_m[i][j] = tmp_m[i][j] - dx;
+
+					rArr[i][j] = (f(x, tmp_p) - f(x, tmp_m)) / (2 * dx);
+				}
+			}
+			//tmp = x.slice();
+
+			return rArr;
+			//return (f(x, Matrix.add(tmp, dx)) - f(x, Matrix.sub(tmp, dx))) / (2 * dx)
 		} else {
-			tmp = x;
+			var tmp = x;
 			return (f(x, tmp+dx) - f(x, tmp-dx)) / (2*dx);
 		}
 	},
@@ -45,7 +69,7 @@ var Matrix = {
 					rArr.push(new Array());
 					for(var j=0; j<b[0].length; j++) {
 						if(j == 0) rArr[i].push(0);
-						rArr[i][j] = b[i][j] + a;
+						rArr[i][j] = a + b[i][j];
 					}
 				}
 			}
@@ -66,6 +90,40 @@ var Matrix = {
 		}
 	},
 
+	div: function(a, b) {
+		var rArr = [];
+		if(Array.isArray(a) && Array.isArray(b)) {
+			if(!this._isAddable(a, b)) return;
+			for(var i=0; i<a.length; i++) {
+					rArr.push(new Array());
+					for(var j=0; j<a[0].length; j++) {
+						if(j == 0) rArr[i].push(0);
+						rArr[i][j] = a[i][j] / b[i][j];
+					}
+				}
+		} else if(Array.isArray(a) || Array.isArray(b)) {
+			if(Array.isArray(a)) { // a is array
+				for(var i=0; i<a.length; i++) {
+					rArr.push(new Array());
+					for(var j=0; j<a[0].length; j++) {
+						if(j == 0) rArr[i].push(0);
+						rArr[i][j] = a[i][j] / b;
+					}
+				}
+			} else { // b is array
+				for(var i=0; i<b.length; i++) {
+					rArr.push(new Array());
+					for(var j=0; j<b[0].length; j++) {
+						if(j == 0) rArr[i].push(0);
+						rArr[i][j] = a / b[i][j];
+					}
+				}
+			}
+		} else return;
+
+		return rArr;
+	},
+
 	dot: function(a, b) {
 		if(!this._isDotable(a, b)) return;
 		var rArr = [];
@@ -82,6 +140,20 @@ var Matrix = {
 
 		return rArr;
 
+	},
+
+	exp: function(x) {
+		var rArr = [];
+
+		for(var i=0; i<x.length; i++) {
+			rArr.push(new Array());
+			for(var j=0; j<x[0].length; j++) {
+				if(j == 0) rArr[i].push(0);
+				rArr[i][j] = Math.exp(x[i][j]); 
+			}
+		}
+
+		return rArr;
 	}, 
 
 	_isAddable: function(_a, _b) {
@@ -96,6 +168,91 @@ var Matrix = {
 		var b = this.shape(_b);
 		if(a[1] == b[0]) return true;
 		else return false;
+	},
+
+	initWeight: function(row, col) {
+		var result = [];
+		for(var i=0; i<row*col; i++) {
+			result.push(Math.random());
+		}
+
+		return this.reshape(result, row, col);
+	},
+
+	log: function(x) {
+		var rArr = [];
+
+		for(var i=0; i<x.length; i++) {
+			rArr.push(new Array());
+			for(var j=0; j<x[0].length; j++) {
+				if(j == 0) rArr[i].push(0);
+				rArr[i][j] = Math.log(x[i][j]); 
+			}
+		}
+
+		return rArr;
+	},
+
+	log2: function(x) {
+		var rArr = [];
+
+		for(var i=0; i<x.length; i++) {
+			rArr.push(new Array());
+			for(var j=0; j<x[0].length; j++) {
+				if(j == 0) rArr[i].push(0);
+				rArr[i][j] = Math.log2(x[i][j]); 
+			}
+		}
+
+		return rArr;
+	},
+
+	log10: function(x) {
+		var rArr = [];
+
+		for(var i=0; i<x.length; i++) {
+			rArr.push(new Array());
+			for(var j=0; j<x[0].length; j++) {
+				if(j == 0) rArr[i].push(0);
+				rArr[i][j] = Math.log10(x[i][j]); 
+			}
+		}
+
+		return rArr;
+	},
+
+	mul: function(a, b) {
+		var rArr = [];
+		if(Array.isArray(a) && Array.isArray(b)) {
+			if(!this._isAddable(a, b)) return;
+			for(var i=0; i<a.length; i++) {
+					rArr.push(new Array());
+					for(var j=0; j<a[0].length; j++) {
+						if(j == 0) rArr[i].push(0);
+						rArr[i][j] = a[i][j] * b[i][j];
+					}
+				}
+		} else if(Array.isArray(a) || Array.isArray(b)) {
+			if(Array.isArray(a)) { // a is array
+				for(var i=0; i<a.length; i++) {
+					rArr.push(new Array());
+					for(var j=0; j<a[0].length; j++) {
+						if(j == 0) rArr[i].push(0);
+						rArr[i][j] = a[i][j] * b;
+					}
+				}
+			} else { // b is array
+				for(var i=0; i<b.length; i++) {
+					rArr.push(new Array());
+					for(var j=0; j<b[0].length; j++) {
+						if(j == 0) rArr[i].push(0);
+						rArr[i][j] = a * b[i][j];
+					}
+				}
+			}
+		} else return;
+
+		return rArr;
 	},
 
 	pow: function(base, exp) {
@@ -158,7 +315,7 @@ var Matrix = {
 					rArr.push(new Array());
 					for(var j=0; j<b[0].length; j++) {
 						if(j == 0) rArr[i].push(0);
-						rArr[i][j] = b[i][j] - a;
+						rArr[i][j] = a - b[i][j];
 					}
 				}
 			}
@@ -182,5 +339,49 @@ var Matrix = {
 var Util = {
 	getRandomArbitrary: function(min, max) {
   		return Math.random() * (max - min) + min;
+	},
+
+	getCSV: function(_data, start, count) {
+		var data = _data.split("\n");
+		var result = [];
+		data.forEach(function(d) {
+			var array = d.split(",");
+			for(var i=start; i<start+count; i++) {
+				result.push(array[i]);
+			}
+		})
+
+		return result;
 	}
+}
+
+
+
+
+var AJAX = {
+	call: function (url, params, onSuccess, progShow, progMsg) {
+		if (progShow) Dialog.showProgress(progMsg);
+		
+		var callobj = {};
+		callobj["url"] = url;
+		callobj["type"] = "GET";
+		callobj["data"] = params;
+		callobj["cache"] = false;
+		callobj["dataType"] = "text";
+		callobj["success"] = onSuccess; 
+		callobj["error"] = function (xhr, status, error) {
+			if (xhr.status == 0) {
+			    Dialog.alert("네트워크 접속이 원할하지 않습니다.");
+			}
+			else {
+				var str = "code:" + xhr.status + "\n" + "message:" + xhr.responseText + "\n" + "error:" + error;
+				console.log(str);
+			}
+		};
+		if (progShow) {
+			callobj["complete"] = function () { Dialog.hideProgress(); };
+		}
+		
+		jQuery.ajax(callobj);
+	},
 }

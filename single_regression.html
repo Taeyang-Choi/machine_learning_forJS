@@ -28,7 +28,7 @@
 
 	var cnt = 0;
 	while(true) {
-		W = mx.sub(W, learning_rate * cal.numericalDerivative(f, W));
+		W = mx.sub(W, mx.mul(learning_rate, cal.numericalDerivative(f, W)));
 		b -= learning_rate * cal.numericalDerivative(f, b);
 
 		if(cnt % 10000 == 0) {
@@ -44,17 +44,5 @@
 	function lossFunc(W, b, x, t) {
 		var y = Machine.getYMatrix(x, W, b); // y = Wx + b;
 		return mx.sum(mx.pow(mx.sub(t, y), 2)) / mx.size(x); // Sigma(1->n) (t_n - y_n)^2 / n 
-	}
-
-	function numericalDerivative(f, x) {
-		var dx = 1e-4;	
-		var tmp;
-		if(Array.isArray(x)) {
-			tmp = x.slice();
-			return (f(x, Matrix.add(tmp, dx)) - f(x, Matrix.sub(tmp, dx))) / (2 * dx)
-		} else {
-			tmp = x;
-			return (f(x, tmp+dx) - f(x, tmp-dx)) / (2*dx);
-		}
 	}
 </script>
