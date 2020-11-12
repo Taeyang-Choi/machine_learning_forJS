@@ -19,6 +19,47 @@ var Matrix = {
 							rArr[i][j] = a[i][j] + b[0][0];
 						}
 					}
+				} else if(a.length == b.length) { // (a * b) + (a, 1)
+					if(this.size(a) > this.size(b)) { // (a*b) + (1, b)
+					 	if(b[0].length != 1) return;
+				 		for(var i=0; i<a.length; i++) {
+							rArr.push(new Array());
+							for(var j=0; j<a[0].length; j++) {
+								if(j == 0) rArr[i].push(0);
+								rArr[i][j] = a[i][j] + b[i][0];
+							}
+						}
+					 } else { // (1, b) + (a*b)
+					 	if(a[0].length != 1) return;
+					 	for(var i=0; i<a.length; i++) {
+							rArr.push(new Array());
+							for(var j=0; j<a[0].length; j++) {
+								if(j == 0) rArr[i].push(0);
+								rArr[i][j] = a[i][0] + b[i][j];
+							}
+						}
+					 }
+				} else if(a[0].length == b[0].length) {
+					 if(this.size(a) > this.size(b)) { // (a*b) + (1, b)
+					 	if(b.length != 1) return;
+				 		for(var i=0; i<a.length; i++) {
+							rArr.push(new Array());
+							for(var j=0; j<a[0].length; j++) {
+								if(j == 0) rArr[i].push(0);
+								rArr[i][j] = a[i][j] + b[0][j];
+							}
+						}
+					 } else { // (1, b) + (a*b)
+					 	if(a.length != 1) return;
+					 	for(var i=0; i<a.length; i++) {
+							rArr.push(new Array());
+							for(var j=0; j<a[0].length; j++) {
+								if(j == 0) rArr[i].push(0);
+								rArr[i][j] = a[0][j] + b[i][j];
+							}
+						}
+					 }
+
 				} else if(!this._isAddable(a, b)) {
 					return;
 				}
@@ -347,7 +388,6 @@ var Calculus = {
 
 			for(var i=0; i<x.length; i++) {
 				rArr.push(new Array());
-		
 				for(var j=0; j<x[0].length; j++) {
 					if(j == 0) rArr[i].push(0);
 					var tmp_p = JSON.parse(JSON.stringify(x)); // deep copy
@@ -421,16 +461,15 @@ function LogicGate() {
 	LogicGate.prototype.log = false;
 	LogicGate.prototype.init = function(data) {
 		this.name = data.name;
-		this.__xData = Matrix.reshape(data.xdata, 4, 2);
-		this.__tData = Matrix.reshape(data.tdata, 4, 1);
+		this.__xData = this.np.reshape(data.xdata, 4, 2);
+		this.__tData = this.np.reshape(data.tdata, 4, 1);
 
-		this.__W = Matrix.initWeight(2, 1);
-		this.__b = Matrix.initWeight(1, 1);
+		this.__W = this.np.initWeight(2, 1);
+		this.__b = this.np.initWeight(1, 1);
 
 		this.__lr = 1e-2; // 학습율
 		this.__ln = 8001; // 훈련 횟수
 		if(isValid(data.log)) this.log = data.log; 
-		
 	}
 
 	LogicGate.prototype.errorVal = function() {
@@ -442,8 +481,6 @@ function LogicGate() {
 			if(this.__W === x) 		return Machine.lossFuncCrossEntropy(dx, this.__b, this.__xData, this.__tData);
 			else if(this.__b === x)	return Machine.lossFuncCrossEntropy(this.__W, dx, this.__xData, this.__tData);
 		};
-
-		var cnt = 0;
 
 		for(var i=0; i<this.__ln; i++) {
 			this.__W = this.np.sub(this.__W, this.np.mul(this.__lr, Calculus.numericalDerivative(f, this.__W)));
@@ -459,7 +496,70 @@ function LogicGate() {
 		const y = Machine.sigmoid(z);
 
 		console.log(y);
+		return y;
 	};
+}
+
+function XORGate() {
+	XORGate.prototype.np = Matrix;
+	XORGate.prototype.log = false;
+	XORGate.prototype.init = function(data) {
+		this.name = data.name;
+
+		this.__xData = this.np.reshape(data.xdata, 4, 2);
+		this.__tData = this.np.reshape(data.tdata, 4, 1);
+
+		this.__W2 = this.np.initWeight(2, 6);
+		this.__b2 = this.np.initWeight(1, 6);
+
+		this.__W3 = this.np.initWeight(6, 1);
+		this.__b3 = this.np.initWeight(1, 1);
+
+		this.__lr = 1e-2; // 학습율
+		this.__ln = 10001; // 훈련 횟수
+		if(isValid(data.log)) this.log = data.log; 
+	}
+
+	XORGate.prototype.feedForward = function(W2, b2, W3, b3) {
+		var dx = 1e-7;
+		var z2 = this.np.add(this.np.dot(this.__xData, W2), b2);
+		var a2 = Machine.sigmoid(z2);
+
+		var z3 = this.np.add(this.np.dot(a2, W3), b3);
+		var y = Machine.sigmoid(z3); // a3
+
+		return -this.np.sum(this.np.add(this.np.mul(this.__tData, this.np.log(this.np.add(y, dx))), this.np.mul(this.np.sub(1, this.__tData), this.np.log(this.np.add(this.np.sub(1, y), dx)))));
+	}
+
+	XORGate.prototype.train = function() {
+		var f = (x, dx) => {
+			if(this.__W2 === x) 		return this.feedForward(dx, this.__b2, this.__W3, this.__b3);
+			else if(this.__b2 === x)	return this.feedForward(this.__W2, dx, this.__W3, this.__b3);
+			else if(this.__W3 === x)	return this.feedForward(this.__W2, this.__b2, dx, this.__b3);
+			else if(this.__b3 === x)	return this.feedForward(this.__W2, this.__b2, this.__W3, dx);
+		};
+
+		for(var i=0; i<this.__ln; i++) {
+			this.__W2 = this.np.sub(this.__W2, this.np.mul(this.__lr, Calculus.numericalDerivative(f, this.__W2)));
+			this.__b2 = this.np.sub(this.__b2, this.np.mul(this.__lr, Calculus.numericalDerivative(f, this.__b2)));
+			this.__W3 = this.np.sub(this.__W3, this.np.mul(this.__lr, Calculus.numericalDerivative(f, this.__W3)));
+			this.__b3 = this.np.sub(this.__b3, this.np.mul(this.__lr, Calculus.numericalDerivative(f, this.__b3)));
+
+			// log 요청 선언 obj.log = true 
+			if(this.log) if(i % 400 == 0) console.log("cnt="+i+ ", error_val: " + this.feedForward(this.__W2, this.__b2, this.__W3, this.__b3));
+		}
+	}
+
+	XORGate.prototype.predict = function(data) {
+		var z2 = this.np.add(this.np.dot(data, this.__W2), this.__b2);
+		var a2 = Machine.sigmoid(z2);
+
+		var z3 = this.np.add(this.np.dot(a2, this.__W3), this.__b3);
+		var y = Machine.sigmoid(z3); // a3
+
+		console.log(y);
+		return y;
+	}
 }
 
 

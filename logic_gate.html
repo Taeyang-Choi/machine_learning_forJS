@@ -23,11 +23,13 @@
 		var xData = [0, 0, 0, 1, 1, 0, 1, 1];
 		var and = [0, 0, 0, 1]; // and data;
 
+
 		var gate = new LogicGate();
 		gate.init({
 			name: "AND_GATE",
 			xdata: xData,
 			tdata : and,
+
 		});
 		gate.train();
 
@@ -35,6 +37,27 @@
 		gate.predict(np.reshape([0, 1], 1, 2));
 		gate.predict(np.reshape([1, 0], 1, 2));
 		gate.predict(np.reshape([1, 1], 1, 2));
+
+		var xor = [0, 1, 1, 0];
+
+		var gate2 = new XORGate();
+		gate2.init({
+			name: "XOR_GATE",
+			xdata: xData,
+			tdata : xor,
+			
+		});
+		gate2.train();
+
+		gate2.predict(np.reshape([0, 0], 1, 2));
+		gate2.predict(np.reshape([0, 1], 1, 2));
+		gate2.predict(np.reshape([1, 0], 1, 2));
+		gate2.predict(np.reshape([1, 1], 1, 2));	
+
+
+
+
+
 
 	}
 </script>
