@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+
+</body>
+</html>
+<script src="../js/jquery-1.12.0.min.js"></script>
+<script type="text/javascript">
+	$(document).ready(function() {
+		console.log("mnist init");
+		AJAX.call("data/mnist_test.csv", "", function(data) {
+			start(data);
+		});
+	});
+</script>	
+
+<script src="../js/machine.js"></script>
+<script type="text/javascript">
+	var np = Matrix;
+
+	function start(data) {
+		var xData = Util.getCSV(data, 1, "max", 10);
+		var tData = Util.getCSV(data, 0, 1, 10);
+
+
+		var mnist = new Mnist();
+		mnist.init({
+			name: "MNIST_TEST",
+			xdata: xData,
+			tdata : tData,
+			log: true,
+		});
+
+		mnist.train();
+
+
+	}
+</script>

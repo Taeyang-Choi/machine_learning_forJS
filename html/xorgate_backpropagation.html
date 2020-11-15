@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+
+</body>
+</html>
+<script src="../js/jquery-1.12.0.min.js"></script>
+<script src="../js/machine.js"></script>
+<script type="text/javascript">
+	var np = Matrix;
+
+	var xgate = new XORGateBackPropagation();
+	xgate.init({
+		name: "XOR_GATE"
+	});
+
+	var xData = np.reshape([0, 0, 0, 1, 1, 0, 1, 1], 4, 2);
+	var tData = np.reshape([0, 1, 1, 0], 4, 1);
+	for(var i=0; i<1000000; i++) {
+		xgate.train(np.reshape(xData[i%4], 1, 2), np.reshape(tData[i%4], 1, 1));
+	}
+	
+	xgate.predict(np.reshape([0, 0], 1, 2));
+	xgate.predict(np.reshape([0, 1], 1, 2));
+	xgate.predict(np.reshape([1, 0], 1, 2));
+	xgate.predict(np.reshape([1, 1], 1, 2));
+</script>

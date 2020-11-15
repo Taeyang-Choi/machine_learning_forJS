@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+
+</body>
+</html>
+<script src="../js/jquery-1.12.0.min.js"></script>
+<script type="text/javascript">
+	$(document).ready(function() {
+		start();
+	});
+</script>	
+
+<script src="../js/machine.js"></script>
+<script type="text/javascript">
+	var np = Matrix;
+
+	function start() {
+		var xData = [0, 0, 0, 1, 1, 0, 1, 1];
+		var and = [0, 0, 0, 1]; // and data;
+
+
+
+		var andGate = new LogicGate();
+		andGate.init({
+			name: "AND_GATE",
+			xdata: xData,
+			tdata : and,
+
+		});
+		andGate.train();
+		console.log("AND GATE")
+		andGate.predict(np.reshape([0, 0], 1, 2));
+		andGate.predict(np.reshape([0, 1], 1, 2));
+		andGate.predict(np.reshape([1, 0], 1, 2));
+		andGate.predict(np.reshape([1, 1], 1, 2));
+
+		var or = [0, 1, 1, 1];
+		var orGate = new LogicGate();
+		orGate.init({
+			name: "OR_GATE",
+			xdata: xData,
+			tdata : or,
+
+		});
+		orGate.train();
+		console.log("OR GATE")
+		orGate.predict(np.reshape([0, 0], 1, 2));
+		orGate.predict(np.reshape([0, 1], 1, 2));
+		orGate.predict(np.reshape([1, 0], 1, 2));
+		orGate.predict(np.reshape([1, 1], 1, 2));
+
+		var nand = [1, 1, 1, 0];
+		var nandGate = new LogicGate();
+		nandGate.init({
+			name: "NAND_GATE",
+			xdata: xData,
+			tdata : nand,
+
+		});
+		nandGate.train();
+		console.log("NAND GATE")
+		nandGate.predict(np.reshape([0, 0], 1, 2));
+		nandGate.predict(np.reshape([0, 1], 1, 2));
+		nandGate.predict(np.reshape([1, 0], 1, 2));
+		nandGate.predict(np.reshape([1, 1], 1, 2));
+
+
+		var xor = [0, 1, 1, 0];
+
+		var xorGate = new XORGate();
+		xorGate.init({
+			name: "XOR_GATE",
+			xdata: xData,
+			tdata : xor,
+			
+		});
+		xorGate.train();
+		console.log("XOR GATE")
+		xorGate.predict(np.reshape([0, 0], 1, 2));
+		xorGate.predict(np.reshape([0, 1], 1, 2));
+		xorGate.predict(np.reshape([1, 0], 1, 2));
+		xorGate.predict(np.reshape([1, 1], 1, 2));	
+
+
+
+
+
+
+	}
+</script>

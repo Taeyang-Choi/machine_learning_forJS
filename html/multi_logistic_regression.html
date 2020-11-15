@@ -7,27 +7,23 @@
 
 </body>
 </html>
-<script src="js/jquery-1.12.0.min.js"></script>
+<script src="../js/jquery-1.12.0.min.js"></script>
 <script type="text/javascript">
 	$(document).ready(function() {
 		start();
 	});
 </script>	
 
-<script src="js/machine.js"></script>
+<script src="../js/machine.js"></script>
 <script type="text/javascript">
 	var np = Matrix;
-	var cal = Calculus;
 
 	function start() {
 		var xData = np.reshape([2, 4, 4, 11, 6, 6, 8, 5, 10, 7, 12, 16, 14, 8, 16, 3, 18, 7], 9, 2);
 		var tData = np.reshape([0, 0, 0, 0, 1, 1, 1, 1, 1], 9, 1);
 
-		//var W = np.initWeight(2, 1);
-		//var b = Math.random();
-
-		var W = np.initWeight(2, 1);
-		var b = Math.random();
+		var W = np.random.rand(2, 1);
+		var b = np.random.rand(1);
 
 		var learning_rate = 1e-2;
 
@@ -41,8 +37,8 @@
 		var cnt = 0;
 		console.log("init ="+cnt+", W: " + W + ", b: " + b + ", error_val: " + lossFunc(W, b, xData, tData));
 		while(true) {
-			W = np.sub(W, np.mul(learning_rate, cal.numericalDerivative(f, W)));
-			b -= learning_rate * cal.numericalDerivative(f, b);
+			W = np.sub(W, np.mul(learning_rate, Machine.numericalDerivative(f, W)));
+			b = np.sub(b, np.mul(learning_rate, Machine.numericalDerivative(f, b)));
 
 
 			cnt++;

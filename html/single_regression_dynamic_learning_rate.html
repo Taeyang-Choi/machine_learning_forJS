@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<link rel="stylesheet" href="../css/chart.css">
+</head>
+<body>
+	<div id="--gbox">
+		<div id="--svline"></div>
+	</div>
+</body>
+</html>
+<script src="../js/jquery-1.12.0.min.js"></script>
+<script src="../js/d3.min.js"></script>
+<script src="../js/machine.js"></script>
+<script src="../js/chart.js"></script>
+<script type="text/javascript">
+	var np = Matrix;
+	var W = np.random.rand(1);
+	var b = np.random.rand(1);
+
+	var _xData = [82, 112, 148, 161, 79, 135, 152, 208, 171, 82,
+					59, 76, 72, 79, 102, 99, 188];
+	var _tData = [12000, 17000, 21943, 25200, 10418, 25300, 29500, 42000, 34000, 9904, 
+					10000, 12250, 12000, 9990, 11414, 21500, 36300];
+	var xData = np.reshape(_xData, _xData.length, 1);
+	var tData = np.reshape(_tData, _tData.length, 1);
+
+
+	var lrW = 1; // 1e-5
+	var lrb = 0.5; // 
+
+	var drW = 2;
+	var drb = 2;
+
+	var dx = 1e-4;
+
+	var f = (x, dx) => { // type 체크할때 json 방식의 checker 를 넣을것.
+		if(W === x) 		return lossFunc(dx, b, xData, tData);
+		else if(b === x)	return lossFunc(W, dx, xData, tData);
+	};
+
+	var EW = Machine.numericalDerivative(f, W);
+	var Eb = Machine.numericalDerivative(f, b);
+
+	var chart = new svLinearChart();
+	drawChart();
+
+	var cnt = 0;
+
+	var checkW = W, checkb = b;
+
+	console.log("init W: " + W + ", b: " + b + ", EW: " + EW + ", Eb: " + Eb);
+	var interval = setInterval(function() { 
+		var tmpW = np.sub(W, np.mul(lrW, Machine.numericalDerivative(f, W)));
+		var tmpEW = Machine.numericalDerivative((x, dx) => {
+			return lossFunc(dx, b, xData, tData);
+		}, tmpW);
+		var wFlag = false;
+		if(compare(EW, tmpEW)) {
+			wFlag = true;
+		} else {
+			lrW /= drW;
+		}		
+
+		var tmpb = np.sub(b, np.mul(lrb, Machine.numericalDerivative(f, b)));
+		var tmpEb = Machine.numericalDerivative((x, dx) => {
+			return lossFunc(W, dx, xData, tData);
+		}, tmpb);
+		var bFlag = false;
+
+		if(compare(EW, tmpEb)) {
+			bFlag = true;
+		} else {
+			lrb /= drb;
+		}
+
+		if(wFlag) {
+			W = tmpW;
+		} else {
+			W = np.sub(W, 1e-4);
+		}
+		if(bFlag) {
+			b = tmpb;
+		} else {
+			b = np.sub(b, 1e-4);
+		}
+
+		cnt++;
+		if(cnt % 1 == 0) {
+			console.log("cnt="+cnt+", W: " + W + ", b: " + b + ", EW: " + tmpEW + ", Eb: " + tmpEb);
+			chart.redraw({
+				W: np.sum(W),
+				b: np.sum(b)
+			});
+
+			if(np.array_equal(checkW, W) && np.array_equal(checkb, b)) {
+				console.log("called cnt: " + cnt);
+				clearInterval(interval);
+			} else {
+				checkW = W; 
+				checkb = b;
+			}
+		}
+
+
+		function compare(_e, _tmpe) {
+			const e = np.sum(_e);
+			const tmpe = np.sum(_tmpe);
+
+			if(e > 0) {
+				if((tmpe < 0)&&(e > tmpe)&&(Math.abs(e) < Math.abs(tmpe))) {
+					return false;
+				} else { 
+					return true;
+				}
+			} else {
+				if((tmpe > 0)&&(e < tmpe)&&(Math.abs(e) < Math.abs(tmpe))) {
+					return false;
+				} else {
+					return true;
+				}
+			}
+		}
+	}, 100)
+
+function lossFunc(W, b, x, t) {
+	var y = Machine.getYMatrix(x, W, b); // y = Wx + b;
+	return np.sum(np.pow(np.sub(t, y), 2)) / np.size(x);
+}
+
+function drawChart() {
+	var options = {};
+	options.select = "#--svline";
+	options.parent = "#--gbox";
+	options.width = 500;
+	options.ratio = 0.6;
+
+	options.margin = {top: 40, right: 30, bottom: 40, left: 30};
+	options.xaxis = true;
+
+	options.xData = xData;
+	options.yData = tData;
+
+	options.W = np.sum(W);
+	options.b = np.sum(b);
+
+	
+	chart.init(options);
+	chart.draw();
+
+}
+
+
+</script>

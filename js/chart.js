@@ -72,10 +72,10 @@ function svLinearChart() {
 			.attr("transform", "translate(" + this.margin.left + ", 0)");
 			//.attr("transform", "translate("+ -5 +", 0)");	
 
-
+		const W = this.W; const b = this.b
 		var linearReg = [];
 		this.dotData.forEach(function(d) {
-			linearReg.push({x:d.x, y:(d.x * this.W + this.b)})
+			linearReg.push({x:d.x, y:(d.x * W + b)})
 		})
 
 		var line = d3.line()
@@ -103,9 +103,6 @@ function svLinearChart() {
 		 		return	d.cy;
 		 		})
 		 	.attr("r", 5)
-
-
-
 	}
 
 	svLinearChart.prototype.redraw = function(options) {
@@ -114,7 +111,7 @@ function svLinearChart() {
 
 		var linearReg = [];
 		this.dotData.forEach(function(d) {
-			linearReg.push({x:d.x, y:(d.x * this.W + this.b)})
+			linearReg.push({x:d.x, y:(d.x * options.W + options.b)})
 		})
 
 		var x = this.x;

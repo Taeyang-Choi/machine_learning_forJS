@@ -7,15 +7,14 @@
 
 </body>
 </html>
-<script src="js/machine.js"></script>
+<script src="../js/machine.js"></script>
 <script type="text/javascript">
-	var mx = Matrix;
-	var cal = Calculus;
-	var W = [[Math.random()]];
-	var b = Math.random();
+	var np = Matrix;
+	var W = np.random.rand(1);
+	var b = np.random.rand(1);
 
-	var xData = mx.reshape([175, 160, 185, 171, 170, 155], 6, 1);
-	var tData = mx.reshape([70,54,78,66,63, 45], 6, 1);
+	var xData = np.reshape([175, 160, 185, 171, 170, 155], 6, 1);
+	var tData = np.reshape([70,54,78,66,63, 45], 6, 1);
 
 	//console.log(lossFunc(xData, tData));
 
@@ -28,8 +27,8 @@
 
 	var cnt = 0;
 	while(true) {
-		W = mx.sub(W, mx.mul(learning_rate, cal.numericalDerivative(f, W)));
-		b -= learning_rate * cal.numericalDerivative(f, b);
+		W = np.sub(W, np.mul(learning_rate, Machine.numericalDerivative(f, W)));
+		b = np.sub(b, np.mul(learning_rate, Machine.numericalDerivative(f, b)));
 
 		if(cnt % 10000 == 0) {
 			console.log("cnt="+cnt+", W: " + W + ", b: " + b);
@@ -43,6 +42,6 @@
 
 	function lossFunc(W, b, x, t) {
 		var y = Machine.getYMatrix(x, W, b); // y = Wx + b;
-		return mx.sum(mx.pow(mx.sub(t, y), 2)) / mx.size(x); // Sigma(1->n) (t_n - y_n)^2 / n 
+		return np.sum(np.pow(np.sub(t, y), 2)) / np.size(x); // Sigma(1->n) (t_n - y_n)^2 / n 
 	}
 </script>
