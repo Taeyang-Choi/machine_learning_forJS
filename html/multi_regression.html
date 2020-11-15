@@ -7,7 +7,7 @@
 
 </body>
 </html>
-<script src="js/jquery-1.12.0.min.js"></script>
+<script src="../js/jquery-1.12.0.min.js"></script>
 <script type="text/javascript">
 	$(document).ready(function() {
 		AJAX.call("data/data-01-test-score.csv", "", function(data) {
@@ -16,19 +16,18 @@
 	});
 </script>	
 
-<script src="js/machine.js"></script>
+<script src="../js/machine.js"></script>
 <script type="text/javascript">
-	var mx = Matrix;
-	var cal = Calculus;
+	var np = Matrix;
 
 	function start(data) {
 		
 
-		var xData = mx.reshape(Util.getCSV(data, 0, 3), 25, 3);
-		var tData = mx.reshape(Util.getCSV(data, 3, 1), 25, 1);
+		var xData = np.reshape(Util.getCSV(data, 0, 3), 25, 3);
+		var tData = np.reshape(Util.getCSV(data, 3, 1), 25, 1);
 
-		var W = mx.initWeight(3, 1);
-		var b = Math.random();
+		var W = np.random.rand(3, 1);
+		var b = np.random.rand(1);
 
 		var learning_rate = 1e-5;
 
@@ -39,8 +38,8 @@
 
 		var cnt = 0;
 		while(true) {
-			W = mx.sub(W, mx.mul(learning_rate, cal.numericalDerivative(f, W)));
-			b -= learning_rate * cal.numericalDerivative(f, b);
+			W = np.sub(W, np.mul(learning_rate, Machine.numericalDerivative(f, W)));
+			b = np.sub(b, np.mul(learning_rate, Machine.numericalDerivative(f, b)));
 
 			if(cnt % 10000 == 0) {
 				console.log("cnt="+cnt+", W: " + W + ", b: " + b);
@@ -51,7 +50,7 @@
 		}
 
 
-		var data = mx.reshape([100, 98, 81], 1, 3);
+		var data = np.reshape([100, 98, 81], 1, 3);
 		var y = Machine.getYMatrix(data, W, b);
 		console.log(y);
 
@@ -60,6 +59,6 @@
 
 	function lossFunc(W, b, x, t) {
 		var y = Machine.getYMatrix(x, W, b); // y = Wx + b;
-		return mx.sum(mx.pow(mx.sub(t, y), 2)) / mx.size(x); // Sigma(1->n) (t_n - y_n)^2 / n 
+		return np.sum(np.pow(np.sub(t, y), 2)) / np.size(x); // Sigma(1->n) (t_n - y_n)^2 / n 
 	}
 </script>
