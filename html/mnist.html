@@ -10,8 +10,7 @@
 <script src="../js/jquery-1.12.0.min.js"></script>
 <script type="text/javascript">
 	$(document).ready(function() {
-		console.log("mnist init");
-		AJAX.call("data/mnist_test.csv", "", function(data) {
+		AJAX.call("../data/mnist_train.csv", "", function(data) {
 			start(data);
 		});
 	});
@@ -20,22 +19,63 @@
 <script src="../js/machine.js"></script>
 <script type="text/javascript">
 	var np = Matrix;
+	const inputNodes = 784;
+	const outputNodes = 10;
 
 	function start(data) {
-		var xData = Util.getCSV(data, 1, "max", 10);
-		var tData = Util.getCSV(data, 0, 1, 10);
+		console.log("function start");
+		var __xData = Util.getCSV(data, 1, "max", 500);
+		var __tData = Util.getCSV(data, 0, 1, 500);
+		var _xData = np.reshape(__xData, __xData.length/inputNodes, inputNodes)  
+		var _tData = np.reshape(__tData, __tData.length, 1);
 
-
-		var mnist = new Mnist();
+		var mnist = new Mnist();		
 		mnist.init({
-			name: "MNIST_TEST",
-			xdata: xData,
-			tdata : tData,
-			log: true,
+			name: "MNIST",
+			learning_rate: 0.5,
 		});
+		console.log("mnist initialized " + _xData.length + " data train start");
 
-		mnist.train();
+		var loop = 10;
+		for(var a=0; a<loop; a++) {
+			for(var i=0; i<_xData.length; i++) {
+				var xData = np.zeros(inputNodes);
 
+				for(var j=0; j<xData[0].length; j++) 
+					xData[0][j] = (_xData[i][j] / 255.0 * 0.99) + 0.01;
+					//xData[0][j] = _xData[i][j];
 
+				var tData = np.add(np.zeros(outputNodes), 0.01);
+				tData[0][_tData[i][0]] = 0.99;
+
+				mnist.train(xData, tData);
+				if(i % (_xData.length / 5) == 0) {
+					//console.log("processing... " + (i/_xData.length)*100 + "% completed... error value: " + mnist.errorVal());
+					console.log("error value: " + mnist.errorVal());
+				}
+			}
+		}
+
+		AJAX.call("../data/mnist_test.csv", "", function(_data) {
+			var __xTest = Util.getCSV(_data, 1, "max", 10);
+			var __tTest = Util.getCSV(_data, 0, 1, 10);
+			var _xTest = np.reshape(__xTest, __xTest.length/inputNodes, inputNodes);  
+			var _tTest = np.reshape(__tTest, __tTest.length, 1);
+
+			for(var i=0; i<_xTest.length; i++) {
+				var xTest = np.zeros(1, inputNodes);
+				for(var j=0; j<_xTest[i].length; j++) 
+					xTest[0][j] = (_xTest[i][j] / 255.0 * 0.99) + 0.01;
+
+				var tTest = np.add(np.zeros(outputNodes), 0.01);
+				tTest[0][_tTest[i][0]] = 0.99;
+
+				var predict = mnist.predict(xTest, tTest);
+
+				//console.log(tTest);
+				console.log(_tTest[i][0] + ", " + predict[0].indexOf(Math.max(...predict[0])));
+				console.log(predict[0]);
+			}
+		});
 	}
 </script>
