@@ -4,7 +4,8 @@
 	<title></title>
 </head>
 <body>
-
+	<div id="--acc"></div>
+	<div id="--tc"></div>
 </body>
 </html>
 <script src="../js/jquery-1.12.0.min.js"></script>
@@ -21,23 +22,89 @@
 	var np = Matrix;
 	const inputNodes = 784;
 	const outputNodes = 10;
+	const dc = 10000;
+	var mnist = new Mnist();
 
 	function start(data) {
 		console.log("function start");
-		var __xData = Util.getCSV(data, 1, "max", 500);
-		var __tData = Util.getCSV(data, 0, 1, 500);
-		var _xData = np.reshape(__xData, __xData.length/inputNodes, inputNodes)  
+		var __xData = Util.getCSV(data, 1, "max", dc);
+		var __tData = Util.getCSV(data, 0, 1, dc);
+		var _xData = np.reshape(__xData, __xData.length/inputNodes, inputNodes);  
 		var _tData = np.reshape(__tData, __tData.length, 1);
 
-		var mnist = new Mnist();		
 		mnist.init({
 			name: "MNIST",
-			learning_rate: 0.5,
+			learning_rate: 0.3,
 		});
 		console.log("mnist initialized " + _xData.length + " data train start");
 
-		var loop = 10;
-		for(var a=0; a<loop; a++) {
+		var interval = setInterval(function() {
+			var index = [];
+			for(var i=0; i<dc; i++) {
+				index.push(i);
+			}
+
+			shuffle(index);
+
+			for(var i=0; i<_xData.length; i++) {
+				var xData = np.zeros(inputNodes);
+
+				for(var j=0; j<xData[0].length; j++) 
+					xData[0][j] = (_xData[index[i]][j] / 255.0 * 0.99) + 0.01;
+					//xData[0][j] = _xData[i][j];
+
+				var tData = np.add(np.zeros(outputNodes), 0.01);
+				tData[0][_tData[index[i]][0]] = 0.99;
+
+				mnist.train(xData, tData);
+				if(i % (_xData.length / 5) == 0) {
+					//console.log("processing... " + (i/_xData.length)*100 + "% completed... error value: " + mnist.errorVal());
+					var err = mnist.errorVal();
+					$("#--acc").html(err.accuracy.toFixed(2));
+					$("#--tc").html(err.tc);
+					//console.log("accuracy: " + err.accuracy.toFixed(2) + "%");
+					if(err.accuracy > 95) {
+						console.log("train end");
+						clearInterval(interval);
+						predict();
+					}
+				}
+			}
+
+			/*for(var i=0; i<_xData.length; i++) {
+				var xData = np.zeros(inputNodes);
+
+				for(var j=0; j<xData[0].length; j++) 
+					xData[0][j] = (_xData[i][j] / 255.0 * 0.99) + 0.01;
+					//xData[0][j] = _xData[i][j];
+
+				var tData = np.add(np.zeros(outputNodes), 0.01);
+				tData[0][_tData[i][0]] = 0.99;
+
+				mnist.train(xData, tData);
+				if(i % (_xData.length / 5) == 0) {
+					//console.log("processing... " + (i/_xData.length)*100 + "% completed... error value: " + mnist.errorVal());
+					var err = mnist.errorVal();
+					$("#--acc").html(err.accuracy.toFixed(2));
+					$("#--tc").html(err.tc);
+					//console.log("accuracy: " + err.accuracy.toFixed(2) + "%");
+					if(err.accuracy > 95) {
+						clearInterval(interval);
+						predict();
+					}
+				}
+			}*/
+
+			function shuffle(array) {
+				for(var i=array.length-1; i>0; i--) {
+					var j = Math.floor(Math.random() * (i+1));
+					[array[i], array[j]] = [array[j], array[i]];
+				}
+			}
+		},1)
+
+		/*var flag = true;
+		while(flag) {
 			for(var i=0; i<_xData.length; i++) {
 				var xData = np.zeros(inputNodes);
 
@@ -51,18 +118,27 @@
 				mnist.train(xData, tData);
 				if(i % (_xData.length / 5) == 0) {
 					//console.log("processing... " + (i/_xData.length)*100 + "% completed... error value: " + mnist.errorVal());
-					console.log("error value: " + mnist.errorVal());
+					var err = mnist.errorVal();
+					$("#--acc").html(err.accuracy.toFixed(2));
+					//console.log("accuracy: " + err.accuracy.toFixed(2) + "%");
+					if(err.accuracy > 95) flag = false;
 				}
 			}
-		}
+		}*/
 
+		
+	}
+
+	function predict() {
 		AJAX.call("../data/mnist_test.csv", "", function(_data) {
-			var __xTest = Util.getCSV(_data, 1, "max", 10);
-			var __tTest = Util.getCSV(_data, 0, 1, 10);
+			var __xTest = Util.getCSV(_data, 1, "max", 10000);
+			var __tTest = Util.getCSV(_data, 0, 1, 10000);
 			var _xTest = np.reshape(__xTest, __xTest.length/inputNodes, inputNodes);  
 			var _tTest = np.reshape(__tTest, __tTest.length, 1);
 
-			for(var i=0; i<_xTest.length; i++) {
+			var acc = 0; var i=0;
+			console.log("predict start");
+			for(i=0; i<_xTest.length; i++) {
 				var xTest = np.zeros(1, inputNodes);
 				for(var j=0; j<_xTest[i].length; j++) 
 					xTest[0][j] = (_xTest[i][j] / 255.0 * 0.99) + 0.01;
@@ -72,10 +148,16 @@
 
 				var predict = mnist.predict(xTest, tTest);
 
+				if(_tTest[i][0] == predict[0].indexOf(Math.max(...predict[0]))) acc++;
+
 				//console.log(tTest);
-				console.log(_tTest[i][0] + ", " + predict[0].indexOf(Math.max(...predict[0])));
-				console.log(predict[0]);
+				//console.log(_tTest[i][0] + ", " + predict[0].indexOf(Math.max(...predict[0])));
+				//console.log(predict[0]);
 			}
+
+			console.log("total accuracy: " + (acc/i*100) + "%");
 		});
 	}
+
+	
 </script>
