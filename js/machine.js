@@ -512,7 +512,7 @@ var Machine = {
 		return -np.sum(np.add(np.mul(t, np.log(np.add(y, dx))), np.mul(np.sub(1, t), np.log(np.add(np.sub(1, y), dx))))); 
 	},
 
-	numericalDerivative: function(f, x) { // mnist 부터 매우 느려짐. 1회훈련이 10시간 이상 요구 * 10001
+	numericalDerivative: function(f, x) {
 		var dx = 1e-4;	
 		if(Array.isArray(x)) {
 			var rArr = np.zeros_like(x);
@@ -707,7 +707,7 @@ function XORGateBackPropagation() { // XOR gate backpropagation version
 
 	XORGateBackPropagation.prototype.train = function(xData, tData) {
 		//this.xData = xData;
-		//this.tData = tData; // accurary, lossVal function 사용시 이용할 데이터
+		//this.tData = tData; // accuracy, lossVal function 사용시 이용할 데이터
 		
 		var lossVal = this._feedForward(xData, tData); // lossVal 값을 이용해서 최소값 판정을 하는 코드를 추가해야함 현재는 lossVal 최소값 판정 작업을 하지않고 있음.
 		var loss3 = this.np.mul(this.np.mul(this.np.sub(this.a3, tData), this.a3), this.np.sub(1, this.a3));
@@ -734,18 +734,32 @@ function XORGateBackPropagation() { // XOR gate backpropagation version
 function Mnist() {
 	Mnist.prototype.np = Matrix;
 	Mnist.prototype.nodes = [784, 16, 16, 10]; // input, hidden1, hidden2, output
+	Mnist.prototype.accuracy = 0;
+	Mnist.prototype.tc = 0; // 훈련횟수
 	Mnist.prototype.init = function(data) {
 		this.name = data.name;
 
-		this.W2 = this.np.div(this.np.random.rand(this.nodes[0], this.nodes[1]), Math.sqrt(this.nodes[0] / 2)); // w 초기값을 xavier/he 방법 사용 20201116
-		this.b2 = this.np.random.rand(this.nodes[1]);
+		if(isValid(data.wb)) { // 이전 데이터 불러오기
+			this.W2 = JSON.parse(data.W2);
+			this.b2 = JSON.parse(data.b2);
 
-		this.W3 = this.np.div(this.np.random.rand(this.nodes[1], this.nodes[2]), Math.sqrt(this.nodes[1] / 2))
-		this.b3 = this.np.random.rand(this.nodes[2]);
+			this.W3 = JSON.parse(data.W3);
+			this.b3 = JSON.parse(data.b3);
 
-		this.W4 = this.np.div(this.np.random.rand(this.nodes[2], this.nodes[3]), Math.sqrt(this.nodes[2] / 2));
-		this.b4 = this.np.random.rand(this.nodes[3]);
+			this.W4 = JSON.parse(data.W4);
+			this.b4 = JSON.parse(data.b4);
+		} else {
+			this.W2 = this.np.div(this.np.random.rand(this.nodes[0], this.nodes[1]), Math.sqrt(this.nodes[0] / 2)); // w 초기값을 xavier/he 방법 사용 20201116
+			this.b2 = this.np.random.rand(this.nodes[1]);
 
+			this.W3 = this.np.div(this.np.random.rand(this.nodes[1], this.nodes[2]), Math.sqrt(this.nodes[1] / 2))
+			this.b3 = this.np.random.rand(this.nodes[2]);
+
+			this.W4 = this.np.div(this.np.random.rand(this.nodes[2], this.nodes[3]), Math.sqrt(this.nodes[2] / 2));
+			this.b4 = this.np.random.rand(this.nodes[3]);
+		}
+
+		
 		this.z4, this.a4, this.z3, this.a3, this.z2, this.a2, this.a1;
 
 		this.lr = isValid(data.learning_rate) ? data.learning_rate : 1e-4;
@@ -765,7 +779,13 @@ function Mnist() {
 		
 		var y = this.a4;
 		var dx = 1e-7;
-		return -this.np.sum(this.np.add(this.np.mul(tData, this.np.log(this.np.add(y, dx))), this.np.mul(this.np.sub(1, tData), this.np.log(this.np.add(this.np.sub(1, y), dx)))));
+
+		if(this.tData[0].indexOf(Math.max(...this.tData[0])) == y[0].indexOf(Math.max(...y[0]))) this.accuracy++;
+
+		var obj = {};
+		obj.errorval = this.np.sum(this.np.pow(this.np.sub(this.tData, y), 2));
+		return obj;
+		//return -this.np.sum(this.np.add(this.np.mul(tData, this.np.log(this.np.add(y, dx))), this.np.mul(this.np.sub(1, tData), this.np.log(this.np.add(this.np.sub(1, y), dx)))));
 	}
 
 	Mnist.prototype.errorVal = function() {
@@ -780,13 +800,22 @@ function Mnist() {
 
 		var y = a4;
 		var dx = 1e-7;
-		return -this.np.sum(this.np.add(this.np.mul(this.tData, this.np.log(this.np.add(y, dx))), this.np.mul(this.np.sub(1, this.tData), this.np.log(this.np.add(this.np.sub(1, y), dx)))));
+		
+		//console.log("tData: " + this.tData[0].indexOf(Math.max(...this.tData[0])) + ", predict: " + y[0].indexOf(Math.max(...y[0])));
+		//console.log(y[0]);
+		//console.log("accuracy: " + (this.accuracy/this.tc*100) + "%");
+		var obj = {};
+		obj.accuracy = this.accuracy/this.tc*100;
+		obj.errorval = this.np.sum(this.np.pow(this.np.sub(this.tData, y), 2));
+		obj.tc = this.tc;  		
+		return obj;
+		//return -this.np.sum(this.np.add(this.np.mul(this.tData, this.np.log(this.np.add(y, dx))), this.np.mul(this.np.sub(1, this.tData), this.np.log(this.np.add(this.np.sub(1, y), dx)))));
 	}
 
 	Mnist.prototype.train = function(xData, tData) {
 		this.xData = xData;
 		this.tData = tData;
-		var lossVal = this.__feedForward(xData, tData);
+		var feed = this.__feedForward(xData, tData);
 
 		var loss4 = this.np.mul(this.np.mul(this.np.sub(this.a4, tData), this.a4), this.np.sub(1, this.a4)); // loss4 = (a4-tdata) * a4 * (1-a4)
 		this.W4 = this.np.sub(this.W4, this.np.mul(this.lr, this.np.dot(this.np.T(this.a3), loss4))); // W4 = W4 - lr*dot(a3.T, loss4)
@@ -800,6 +829,7 @@ function Mnist() {
 		var loss2 = this.np.mul(this.np.mul(this.np.dot(loss3, this.np.T(this.W3)), this.a2), this.np.sub(1, this.a2)); // loss2 = dot(loss3,  W3.T) * a2 * (1-a2)
 		this.W2 = this.np.sub(this.W2, this.np.mul(this.lr, this.np.dot(this.np.T(this.a1), loss2))); // W2 = W2 - lr * dot(a1.T, loss2)
 		this.b2 = this.np.sub(this.b2, this.np.mul(this.lr, loss2)); // b2 = b2 - lr*loss2
+		this.tc++;
 	}
 
 	Mnist.prototype.predict = function(xData, tData) {
@@ -815,8 +845,9 @@ function Mnist() {
 		var a4 = Machine.sigmoid(z4);
 
 		var y = a4;
-		var dx = 1e-7;
-		console.log("error value: " + (-this.np.sum(this.np.add(this.np.mul(tData, this.np.log(this.np.add(y, dx))), this.np.mul(this.np.sub(1, tData), this.np.log(this.np.add(this.np.sub(1, y), dx)))))));
+		//var dx = 1e-7;
+		//console.log("error value: " + (-this.np.sum(this.np.add(this.np.mul(tData, this.np.log(this.np.add(y, dx))), this.np.mul(this.np.sub(1, tData), this.np.log(this.np.add(this.np.sub(1, y), dx)))))));
+		//console.log("error val: " + this.np.sum(this.np.pow(this.np.sub(this.tData, y), 2)));
 		return y;
 	}
 }
